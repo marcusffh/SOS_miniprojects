@@ -28,3 +28,9 @@ instance Ord Interval where
     _ <= Bottom = False
     Interval l1 u1 <= Interval l2 u2 =
         l2 <= l1 && u1 <= u2
+
+joinInterval :: Interval -> Interval -> Interval
+joinInterval Bottom x = x
+joinInterval x Bottom = x
+joinInterval (Interval l1 u1) (Interval l2 u2) =
+    Interval (min l1 l2) (max u1 u2)
