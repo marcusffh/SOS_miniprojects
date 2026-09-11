@@ -1,0 +1,36 @@
+cabal-version:      3.4
+name:               ebpf-cfg
+version:            0.1.0.0
+synopsis:           Starter code for working with a CFG for eBPF.
+homepage:           https://github.com/kfl/ebpf-cfg
+license:            MIT
+license-file:       LICENSE
+author:             Ken Friis Larsen
+maintainer:         kflarsen@di.ku.dk
+build-type:         Simple
+
+
+common warnings
+    ghc-options: -Wall
+
+executable ebpf-cfg
+    -- Import common warning flags.
+    import:           warnings
+
+    -- .hs or .lhs file containing the Main module.
+    main-is:          Main.hs
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
+    -- Other library packages from which modules are imported.
+    build-depends:    base >= 4.14 && < 5,
+                      containers,
+                      ebpf-tools == 0.2.0.0,
+                      text-display
+
+    -- Directories containing source files.
+    hs-source-dirs:   app
+
+    -- Base language which the package is written in.
+    default-language: Haskell2010
