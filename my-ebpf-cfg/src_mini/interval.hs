@@ -29,6 +29,7 @@ instance Ord Interval where
     Interval l1 u1 <= Interval l2 u2 =
         l2 <= l1 && u1 <= u2
 
+-- A function that computes the smallest interval to contain both intervals
 joinInterval :: Interval -> Interval -> Interval
 joinInterval Bottom x = x
 joinInterval x Bottom = x
