@@ -156,6 +156,13 @@ analyzeOnce graph states =
 
             Just _ ->
                 currentStates
+                
+analyze :: CFG -> Map.Map Label State -> Map.Map Label State
+analyze graph states =
+    let newStates = analyzeOnce graph states
+    in if newStates == states
+       then states
+       else analyze graph newStates
 
 checkAssert :: State -> Jcmp -> Reg -> RegImm -> Truth
 checkAssert state cmp r operand =
