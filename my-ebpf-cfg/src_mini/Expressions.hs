@@ -1,3 +1,5 @@
+-- Part 3
+
 module Expressions where
 
 import Interval
@@ -111,12 +113,12 @@ evalAdd :: Environment -> Reg -> Reg -> Interval
 evalAdd env r1 r2 = addInterval (evalReg env r1) (evalReg env r2)
 
 data Expr
-    = RegExpr Reg
-    | ConstExpr Integer
+    = RegExpr Reg -- an expression for a register
+    | ConstExpr Integer -- just an integer
     | AddExpr Expr Expr
     | SubExpr Expr Expr
     | MulExpr Expr Expr
-    | MemExpr Expr
+    | MemExpr Expr -- memory
     deriving (Show, Eq)
 
 
