@@ -1,3 +1,5 @@
+module Interval where
+
 data Bound  -- define a type with three possible value
     = NegInf -- negative infinity
     | Finite Integer -- an actual number
