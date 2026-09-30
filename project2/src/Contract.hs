@@ -1,23 +1,8 @@
--- | The runtime contract: the data region, the initial states in which a
--- micro-eBPF program can be started, a text format for writing initial
--- states by hand, and a random generator of initial states for testing.
---
--- The contract (reference definition, Section 2):
---
--- * the data region is [DB, DL), where DB and DL are multiples of 4,
---   DB < DL < 2^32 and DL - DB >= 512;
---
--- * r1 = DB, r2 = DL - DB (the size of the region), r10 = DL;
---
--- * all other registers (r0, r3-r9 and, for rewritten programs, r11-r15)
---   hold arbitrary 32-bit values;
---
--- * the memory holds an arbitrary word at every aligned address of the
---   data region.
---
--- An initial memory is represented by a /fill/ (every word zero, or a
--- pseudo-random word depending on the address) and a map of words that
--- differ from the fill.
+-- Contract.hs defines the environment in which the program is allowed to run
+-- Most importantly, it defines the data region as [DB, DL] where DB is the beginning and DL is the end
+-- It also specifies the inital values of important registers: r1 = DB, r2 = DL-DB, and r10 = DL
+-- It provides functions for creating and checking initial states, including the inital registers and memory contents
+-- For our project: This tells us what the rewriter's memory checks need to protect - accesses must stay inside [DB, DL]
 module MicroEbpf.Contract
   ( Region (..)
   , inRegion
