@@ -1,18 +1,8 @@
-{-# LANGUAGE PatternSynonyms #-}
--- | The operational semantics of micro-eBPF (reference definition,
--- Section 3): a small-step semantics, parameterized by the data region
--- [DB, DL), whose code region for a program P is [0, #P).
---
--- A configuration is either running, <a, R, H> with program pointer a,
--- registers R and memory H, or final, <f, R, H> with f one of exit,
--- error, trap and violation.  Every ordinary instruction (all except exit
--- and error) moves to a new running configuration <a', R', H'> under a
--- condition: a' lies in the code region, and, for ldxw and stxw, the
--- address x of the access lies in the data region.  If the condition does
--- not hold, the instruction moves to <violation, R, H> instead.  A load or
--- store at an address x in the data region that is not a multiple of 4
--- moves to <trap, R, H>.  exit and error move to <exit, R, H> and
--- <error, R, H>.  Final configurations have no successor.
+-- Semantics.hs sescribes what actually happens when a micro-eBPF instruction executes
+-- It defines how registers, memory, jumps, loads, stores, arithmetic, etc. change the program state.
+-- It also defines the different ways a program can finish, such as exit, error, trap, or violation
+-- In particular, it tells us what happens when a program accesses memory outside the data region or jumps outside its code
+-- For our project: This is what we use to understand what behavior our rewriteen program must preserve
 module MicroEbpf.Semantics
   ( Final (..)
   , Mem (..)
