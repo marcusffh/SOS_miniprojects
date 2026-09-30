@@ -1,0 +1,30 @@
+# Hand-written initial states for sfi-kit (option --inputs).
+# base = DB (r1), limit = DL (r10); r2 = DL - DB.  DB and DL are multiples
+# of 4, DB < DL and DL - DB >= 512.  The memory holds the words given with
+# mem (mem ADDR w1 w2 ... sets the words at ADDR, ADDR+4, ...) and the fill
+# elsewhere (fill zero, or fill pattern N for pseudo-random words).
+# Registers r0, r3-r9, r11-r15 default to 0; a negative number stands for
+# its two's complement (-4 is 0xfffffffc).
+
+# An Ethernet/IPv4/UDP frame header of 44 octets (11 words, see
+# packet_parse.asm) at the start of a region with DL - DB = 44 + 512.
+base 0x20000
+limit 0x2022c
+fill zero
+mem 0x20000 0x33221100 0x77665544 0xbbaa9988 0x00450008 0x00001c00 0x11400040 0xa8c00000 0xa8c00100 0xd2040200 0x08002e16 0x00000000
+r3 5
+---
+# A region at the bottom of the address space, with pseudo-random contents.
+base 0x0
+limit 0x200
+fill pattern 0x2026
+r3 0x3
+r4 101
+r5 0x1fc
+---
+# A region at the top of the address space, and pointers near 2^32.
+base 0xfffffc00
+limit 0xfffffffc
+fill pattern 0x7
+r5 -4
+r6 0xfffffff4
