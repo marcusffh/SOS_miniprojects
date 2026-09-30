@@ -21,13 +21,29 @@ data L
   | ErrorStub
   deriving (Eq, Ord, Show)
 
-rewrite :: Program -> Either String Program
-rewrite p = assemble (concatMap transform (map relabel (labeled p)))
-  where
     -- TODO: a prologue; a check in front of every load and store that is
     -- not safe by construction; a stub that ends the run with error; a
     -- treatment of the jumps whose target lies outside the code region.
+
+rewrite :: Program -> Either String Program
+rewrite p = assemble (prologue ++ concatMap transform (map relabel (labeled p)))
+  where
+    -- Save the original data base (DB) from r1.
+    -- Registers r11-r15 are reserved for the inserted SFI code.
+    prologue =
+      [Ins (Binary B32 Mov (Reg 11) (R (Reg 1)))]
+
+    -- Original instructions are unchanged for now.
     transform it = [it]
+
+{- Reg 1       = r1
+R (Reg 1)   = brug r1 som source
+Reg 11      = r11
+Mov          = kopier
+B32          = 32-bit
+Binary ...   = instruktionen
+Ins ...      = læg instruktionen ind i programmet -}
+
 
 relabel :: Item Int -> Item L
 relabel it =

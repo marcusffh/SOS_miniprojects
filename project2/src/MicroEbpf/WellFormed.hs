@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 -- WellFormed.hs checks whether a program is a valid micro-eBPF program. 
 -- It checks things such as valid registers, valid immediates, valid offsets and whether the instructions belong to the supported language
 -- It also distringuishes between input programs using r0-r10 and rewriteen output programs that may use r0-r15

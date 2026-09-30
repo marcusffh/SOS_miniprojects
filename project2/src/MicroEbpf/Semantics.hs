@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 -- Semantics.hs sescribes what actually happens when a micro-eBPF instruction executes
 -- It defines how registers, memory, jumps, loads, stores, arithmetic, etc. change the program state.
 -- It also defines the different ways a program can finish, such as exit, error, trap, or violation

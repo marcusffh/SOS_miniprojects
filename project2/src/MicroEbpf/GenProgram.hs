@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 -- GenProgram.hs generates random valid micro-eBPF programs
 -- The generated programs intentionally contain interesting cases such as valid pointers, invalid pointers, memory accesses, loops, overwritten r1/r2, and jumps outside the program
 -- This means it isn't just generating easy programs that always behave nicely

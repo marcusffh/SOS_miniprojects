@@ -1,8 +1,11 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 -- Defines the micro-eBPF language, meaning the instructions that a program is allowed to contain
 -- It handles things like parsing an .asm file into haskell instructions and printing Haskell instructions back to .asm
 -- It also defines which instructions are considered valid micro-eBPF instructions.
 -- It makes sure we don't accidentally use things outside the language, such as unsupported 64-bit operartions
 -- For our project: this tells us what instructions our rewriter can work with and generate
+
 module MicroEbpf.Syntax
   ( pattern Error
   , isMicroEbpf
