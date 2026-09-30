@@ -1,20 +1,9 @@
--- | sfi-rewrite: your inline reference monitor for micro-eBPF.
---
--- usage: sfi-rewrite IN.asm OUT.asm
---
--- As handed out, this is the identity transformation.  It satisfies
--- requirements (0) and (1), but not (2); try
---
--- >  cabal run sfi-rewrite -- examples/wild_pointer.asm out.asm
--- >  cabal run sfi-kit -- test examples/wild_pointer.asm out.asm
---
--- The skeleton shows one way to structure a rewriter: put the program in
--- labeled form (a label in front of every original instruction, symbolic
--- targets for the jumps that stay inside the code region), insert code,
--- and let 'assemble' recompute every jump offset.  Jumps to addresses
--- outside the code region keep their numeric offsets in labeled form: you
--- have to decide what becomes of them.  Nothing obliges you to keep this
--- structure.
+-- Rewrite.hs is the main file we are supposed to implement for the assignment.
+-- It currently contains an identity rewriter, meaning it basically returns the original program unchanged.
+-- It already provides the structure for turning the program into labeled form, transforming it, and assembling it back into a normal program.
+-- We need to replace the transform part with our actual SFI instrumentation: memory checks, control-flow protection, and an error stub.
+-- This is where most of our actual implementation work will happen.
+
 module Main (main) where
 
 import System.Environment (getArgs)
