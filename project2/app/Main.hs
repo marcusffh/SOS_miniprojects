@@ -1,5 +1,8 @@
--- | sfi-kit: command-line front end of the mini-project 2 kit.  It
--- implements baseline micro-eBPF only.
+-- Main.hs is the command-line testing and execution tool supplied with the project 
+-- It provides commands such as check, run, test, fuzz, and gen
+-- For example, test takes an original program and a rewirteen program and tests wheteher the rewriting satisfies the requirements
+-- fuzz automatically generates many random programs, runs our rewriter on them, and tests the resulting programs
+-- For our project: we mostly use this file rather than modify it
 module Main (main) where
 
 import Control.Monad (forM, forM_, unless, when)
