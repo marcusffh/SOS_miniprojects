@@ -1,4 +1,8 @@
--- | A small deterministic random generator (SplitMix64) and combinators.
+-- GenUtil.hs contains the general random-generation machinery used by the other generator files
+-- It provides thins like random choices, random numbers, probabilities and reproducible generation
+-- GenProgram.hs uses these functions when constructing random micro-eBPF programs
+-- Contract.hs also uses the generation utulities when creating random inital states
+-- For our project: we probably won't need to modify this file; it supports the testing infrastructure.
 module MicroEbpf.GenUtil
   ( G
   , runG
