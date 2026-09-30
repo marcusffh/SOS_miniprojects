@@ -1,0 +1,4 @@
+dist-newstyle/
+fuzz-out/
+*.o
+*.hi

@@ -1,0 +1,7 @@
+packages: .
+
+-- The same version of ebpf-tools as in the course starter code (ebpf-cfg).
+source-repository-package
+    type: git
+    location: https://github.com/kfl/ebpf-tools.git
+    tag: 3024cfaddd9160bb746a2b20d982c511791c8644

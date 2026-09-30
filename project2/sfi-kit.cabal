@@ -1,0 +1,54 @@
+cabal-version:      3.4
+name:               sfi-kit
+version:            0.1.0.0
+synopsis:           Kit for SOS mini-project 2: baseline micro-eBPF and SFI testing
+description:
+    Parser and printer, code addresses and an assembler, well-formedness,
+    the operational semantics of baseline micro-eBPF, the runtime contract
+    with a generator of initial states, a tester for the requirements on
+    SFI rewriters, a program generator for fuzzing, and a skeleton rewriter.
+license:            MIT
+author:             Fritz Henglein
+build-type:         Simple
+extra-doc-files:    README.md
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:  MicroEbpf.Layout
+                      MicroEbpf.Syntax
+                      MicroEbpf.WellFormed
+                      MicroEbpf.Contract
+                      MicroEbpf.GenUtil
+                      MicroEbpf.GenProgram
+                      MicroEbpf.Semantics
+                      MicroEbpf.Properties
+    build-depends:    base >= 4.14 && < 5,
+                      containers,
+                      ebpf-tools == 0.2.0.0
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+executable sfi-kit
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base,
+                      containers,
+                      directory,
+                      filepath,
+                      process,
+                      ebpf-tools,
+                      sfi-kit
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
+executable sfi-rewrite
+    import:           warnings
+    main-is:          Rewrite.hs
+    build-depends:    base,
+                      ebpf-tools,
+                      sfi-kit
+    hs-source-dirs:   app
+    default-language: Haskell2010
