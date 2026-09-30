@@ -1,28 +1,8 @@
-{-# LANGUAGE PatternSynonyms #-}
--- | Concrete syntax of micro-eBPF: parsing and printing.
---
--- The syntax is that of the assembler of the course starter code
--- (@ebpf-tools@), with these differences:
---
--- * arithmetic instructions are written without a width suffix (@add r1,
---   r2@), since all values have 32 bits; the suffix @32@ of the starter
---   code (@add32 r1, r2@) is accepted as well and means the same; the
---   suffix @64@ is rejected;
---
--- * the instruction @error@ ends the run in the final configuration
---   /error/; there is no @call@ instruction;
---
--- * the conventional forms @[r10-8]@ and @jeq r1, 0, -3@ are accepted as
---   well as the starter-code forms @[r10+-8]@ and @jeq r1, 0, +-3@, and
---   the offset of a conditional jump may be written without a sign
---   (@jeq r1, 0, 3@ is @jeq r1, 0, +3@).
---
--- The parser accepts only the instructions of micro-eBPF (condition W1 of
--- the reference definition), and only numbers whose absolute value is
--- below 2^63 (the starter code's parser reads numbers into 64-bit
--- integers; the well-formedness check tests the exact ranges).  The
--- printer produces the starter-code forms of offsets, unsuffixed
--- arithmetic and @error@.
+-- Defines the micro-eBPF language, meaning the instructions that a program is allowed to contain
+-- It handles things like parsing an .asm file into haskell instructions and printing Haskell instructions back to .asm
+-- It also defines which instructions are considered valid micro-eBPF instructions.
+-- It makes sure we don't accidentally use things outside the language, such as unsupported 64-bit operartions
+-- For our project: this tells us what instructions our rewriter can work with and generate
 module MicroEbpf.Syntax
   ( pattern Error
   , isMicroEbpf
