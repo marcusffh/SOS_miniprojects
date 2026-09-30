@@ -1,16 +1,8 @@
-{-# LANGUAGE PatternSynonyms #-}
--- | Random well-formed input programs, for fuzzing a rewriter.
---
--- The programs terminate (forward branches, counted loops and scans with
--- a constant cap).  They access the top of the data region through r10
--- and through derived pointers, and the bottom through r1 or a copy of it;
--- they compute pointers, use pointers taken from arbitrary registers,
--- sometimes compare pointers with the bounds of the region themselves,
--- sometimes get these comparisons wrong, sometimes overwrite r1 and r2,
--- sometimes end with the error instruction, and sometimes make misaligned
--- accesses.  About a quarter of the programs contain a jump or branch to
--- an address outside the code region (taken in some runs, or in dead
--- code).
+-- GenProgram.hs generates random valid micro-eBPF programs
+-- The generated programs intentionally contain interesting cases such as valid pointers, invalid pointers, memory accesses, loops, overwritten r1/r2, and jumps outside the program
+-- This means it isn't just generating easy programs that always behave nicely
+-- It is designed specifically to find bugs in an SFI rewriter
+-- For our project: This gives us lots of random programs with which we can test whether our rewriter actually works.
 module MicroEbpf.GenProgram
   ( genProgram
   ) where
