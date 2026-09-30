@@ -1,23 +1,8 @@
-{-# LANGUAGE PatternSynonyms #-}
--- | Well-formedness of micro-eBPF programs (conditions W1-W3 of the
--- reference definition).
---
--- A program is well-formed with k registers if
---
--- * W1: it has at least one instruction; every instruction is one of
---   micro-eBPF (arithmetic with a register or an immediate operand,
---   @ldxw@, @stxw@, @ja@, the conditional jumps, @exit@, @error@); it
---   names only the registers r0 .. r(k-1); immediates lie in
---   [-2^31, 2^32); memory and jump offsets lie in [-2^15, 2^15);
---
--- * W2: no instruction writes r10 (the frame pointer);
---
--- * W3: the last instruction is @ja@, @exit@ or @error@.
---
--- Input programs have k = 11 registers (r0-r10); the output programs of a
--- rewriter have k = 16 (r0-r15).  Jump targets are not restricted: a jump
--- to an address outside the code region is well-formed, and the semantics
--- ends a run that takes it in a violation.
+-- WellFormed.hs checks whether a program is a valid micro-eBPF program. 
+-- It checks things such as valid registers, valid immediates, valid offsets and whether the instructions belong to the supported language
+-- It also distringuishes between input programs using r0-r10 and rewriteen output programs that may use r0-r15
+-- It allows jumps outside the program to be well-formed, because those are allowed by the original language even though they later result in an SFI violation
+-- For our project: Our rewriter must take a well-formed input and produce a well-formed output
 module MicroEbpf.WellFormed
   ( Dialect (..)
   , registerCount
