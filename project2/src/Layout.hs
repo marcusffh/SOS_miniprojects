@@ -1,15 +1,8 @@
--- | Code addresses of micro-eBPF programs, and a small assembler.
---
--- Every micro-eBPF instruction occupies one 64-bit unit of code, so code
--- addresses are instruction numbers: the instructions of a program @P@ are
--- at the addresses 0 .. #P-1 (the code region of @P@).  A jump at address
--- @a@ with offset @o@ transfers control to address @a + 1 + o@, which may
--- lie outside the code region (the semantics then ends the run in a
--- violation).
---
--- The assembler turns a list of items with symbolic labels into a program
--- with numeric offsets.  A rewriter can put the input program into labeled
--- form, insert code, and let 'assemble' recompute every jump offset.
+-- Layout.hs deals with program addresses and jumps
+-- It can tell us the address of every instruction and calculate where a jump actually goes
+-- It can turn a normal program into a labeled program, where jumps can refer to labels instead of fixed numerical offsets
+-- This is important because our rewriter will insert instructions, which changes the addresses of later instructions.
+-- For our project: Layout.hs lets us insert checks without manually recalculating every jump
 module MicroEbpf.Layout
   ( addressed
   , jumpTarget
