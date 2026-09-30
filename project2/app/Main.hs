@@ -3,6 +3,7 @@
 -- For example, test takes an original program and a rewirteen program and tests wheteher the rewriting satisfies the requirements
 -- fuzz automatically generates many random programs, runs our rewriter on them, and tests the resulting programs
 -- For our project: we mostly use this file rather than modify it
+
 module Main (main) where
 
 import Control.Monad (forM, forM_, unless, when)
