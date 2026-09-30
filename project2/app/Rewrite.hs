@@ -21,7 +21,7 @@ import MicroEbpf.Layout
 import MicroEbpf.Syntax
 import MicroEbpf.WellFormed
 
--- | Labels of the rewritten program: the address of an original
+-- Labels of the rewritten program: the address of an original
 -- instruction, or a label of your own (extend as needed).
 data L
   = Orig Int
