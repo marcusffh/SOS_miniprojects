@@ -1,21 +1,8 @@
--- | Testing the requirements on a rewriting P |-> P' (reference
--- definition, Section 4) on individual initial states.
---
--- (0) Well-formedness is checked separately ("MicroEbpf.WellFormed").
---
--- (1) Partial correctness: if the run of P from an initial state ends in
---     <f, R1, H1> with f one of exit, error, trap, then the run of P' from
---     the same state (with arbitrary values in r11-r15) ends in
---     <f, R1', H1> with R1' equal to R1 on r0-r10; if the run of P does
---     not terminate, neither does the run of P'.
---
--- (2) Soundness: the run of P' does not end in violation.
---
--- Non-termination is approximated by step budgets: P gets @fuel@ steps and
--- P' gets @fuel * overhead@ steps.  A run of P that exhausts its budget is
--- inconclusive (but P' must still not end in violation).  When P ends in
--- violation, (1) says nothing: P' passes unless it ends in violation (if
--- it exhausts its budget, the test is inconclusive).
+-- Properties.hs contains the actual testing logic for checking whether a rewriter is correct
+-- It can run the original and rewritten programs from the same initial state and compare their results
+-- It checks whether the rewritten program causes an SFI violation and whether it otherwise behaves like the original
+-- It also measures things such as instruction/step overhead, which is useful for evaluation the performance of our solution
+-- For our project: This is one of the most important files for demonstrating that our rewriter is correct.
 module MicroEbpf.Properties
   ( Verdict (..)
   , Failure (..)
