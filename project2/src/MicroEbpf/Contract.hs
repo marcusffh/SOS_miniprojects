@@ -16,6 +16,7 @@ module MicroEbpf.Contract
   , G
   , runG
   , genInit
+  , genMaskingInit
   , programConstants
   ) where
 
@@ -284,6 +285,82 @@ genInit prog = do
              }
   when (validInit st /= Right ()) (error ("genInit: invalid state " ++ show st))
   pure st
+
+-- | Random initial state for the address-masking extension.
+-- The region size is always a power of two.
+genMaskingInit :: Program -> G InitState
+genMaskingInit prog = do
+  let consts = programConstants prog
+
+  size <- oneOf [512, 1024, 2048, 4096, 8192, 16384]
+
+  let maxBlock = (2 ^ (32 :: Int)) `div` size - 1
+  block <- range 0 maxBlock
+  let db = block * size
+
+  let dl = db + size
+      pointers =
+        [ db
+        , db + 4
+        , db - 4
+        , dl
+        , dl - 4
+        , dl + 4
+        , dl - 8
+        , dl - 512
+        , db + alignDown (size `div` 2)
+        ]
+
+  regs <- forM ([0] ++ [3 .. 9] ++ [11 .. 15]) (\k -> do
+            v <- genValue consts pointers
+            pure (k, v))
+
+  fill <- frequency
+            [ (3, fmap FillPattern word)
+            , (1, pure FillZero)
+            ]
+
+  let offs = accessOffsets prog
+      sites =
+        [ x
+        | o <- offs
+        , x <- [db + o, dl + o]
+        , (x `mod` 4) == 0
+        , db <= x
+        , x < dl
+        ]
+
+  k <- if null sites
+         then pure (0 :: Int)
+         else fmap fromInteger (range 0 3)
+
+  plants <- replicateM k (do
+              x <- oneOf sites
+              v <- frequency
+                     [ (if null consts then 0 else 3, oneOf consts)
+                     , (1, pure 0)
+                     ]
+              pure (wordMod x, wordMod v))
+
+  zeros <- frequency
+             [ (3, pure [])
+             , (1, fmap
+                    (\j -> [(wordMod (db + (4 * j)), 0)])
+                    (range 0 32))
+             ]
+
+  let st = InitState
+             { iRegion = Region (wordMod db) (wordMod dl)
+             , iRegs = M.fromList regs
+             , iFill = fill
+             , iWords = M.fromList (plants ++ zeros)
+             }
+
+  when (validInit st /= Right ())
+    (error ("genMaskingInit: invalid state " ++ show st))
+
+  pure st
+
 
 -- | A register value: small numbers, boundary values, the program's
 -- constants and their neighbors, pointers into and just around the data

@@ -167,6 +167,10 @@ givenStates o =
 randomStates :: Word64 -> Int -> Program -> [InitState]
 randomStates seed count p = runG seed (mapM (const (genInit p)) [1 .. count])
 
+randomMaskingStates :: Word64 -> Int -> Program -> [InitState]
+randomMaskingStates seed count p =
+  runG seed (mapM (const (genMaskingInit p)) [1 .. count])
+
 doRun :: Opts -> FilePath -> IO ()
 doRun o f = do
   p <- load f
@@ -316,7 +320,7 @@ doFuzz o =
                     printf "program %d (%s): the output is not well-formed: requirement (0) fails: %s\n" k fin e
                     return False
                   Right () -> do
-                    let sts = given ++ randomStates ((oSeed o * 7919) + fromIntegral k) (maybe 200 id (oN o)) p
+                    let sts = given ++ randomMaskingStates ((oSeed o * 7919) + fromIntegral k) (maybe 200 id (oN o)) p
                         s = testRewriting (oFuel o) (oOverhead o) p p' sts
                     if sFailed s == 0
                       then return True

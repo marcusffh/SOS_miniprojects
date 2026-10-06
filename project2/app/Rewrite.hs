@@ -36,43 +36,44 @@ rewrite p =
   where
     prologue =
       [ Ins (Binary B32 Mov (Reg 11) (R (Reg 1)))
-      , Ins (Binary B32 Mov (Reg 12) (R (Reg 10)))
+      , Ins (Binary B32 Mov (Reg 12) (R (Reg 2)))
+      , Ins (Binary B32 Sub (Reg 12) (Imm 1))
       ]
 
     transform it = -- Take every original instruction and decide "do i need to add a safety check here?"
       case it of
-        Ins (Load B32 d s moff) ->
+        Ins (Load B32 d s moff) -> 
           case moff of
             Nothing ->
               [ Ins (Binary B32 Mov (Reg 13) (R s))
-              , JCondTo Jlt (Reg 13) (R (Reg 11)) ErrorStub
-              , JCondTo Jge (Reg 13) (R (Reg 12)) ErrorStub
-              , it --means "after checks pass, execute original instruction"
+              , Ins (Binary B32 And (Reg 13) (R (Reg 12)))
+              , Ins (Binary B32 Add (Reg 13) (R (Reg 11)))
+              , Ins (Load B32 d (Reg 13) Nothing)
               ]
-
+            
             Just off ->
               [ Ins (Binary B32 Mov (Reg 13) (R s))
               , Ins (Binary B32 Add (Reg 13) (Imm off))
-              , JCondTo Jlt (Reg 13) (R (Reg 11)) ErrorStub
-              , JCondTo Jge (Reg 13) (R (Reg 12)) ErrorStub
-              , it
+              , Ins (Binary B32 And (Reg 13) (R (Reg 12)))
+              , Ins (Binary B32 Add (Reg 13) (R (Reg 11)))
+              , Ins (Load B32 d (Reg 13) Nothing)
               ]
 
         Ins (Store B32 r moff (R s)) ->
           case moff of
             Nothing ->
               [ Ins (Binary B32 Mov (Reg 13) (R r))
-              , JCondTo Jlt (Reg 13) (R (Reg 11)) ErrorStub
-              , JCondTo Jge (Reg 13) (R (Reg 12)) ErrorStub
-              , it
+              , Ins (Binary B32 And (Reg 13) (R (Reg 12)))
+              , Ins (Binary B32 Add (Reg 13) (R (Reg 11)))
+              , Ins (Store B32 (Reg 13) Nothing (R s))
               ]
-
+            
             Just off ->
               [ Ins (Binary B32 Mov (Reg 13) (R r))
               , Ins (Binary B32 Add (Reg 13) (Imm off))
-              , JCondTo Jlt (Reg 13) (R (Reg 11)) ErrorStub
-              , JCondTo Jge (Reg 13) (R (Reg 12)) ErrorStub
-              , it
+              , Ins (Binary B32 And (Reg 13) (R (Reg 12)))
+              , Ins (Binary B32 Add (Reg 13) (R (Reg 11)))
+              , Ins (Store B32 (Reg 13) Nothing (R s))
               ]
         
         -- CONDITIONAL JUMP
