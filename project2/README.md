@@ -1,22 +1,75 @@
-# How to test out implementation
-To evaluate the code, run the line or block in the terminal, as described below.
+# How to test our implementation
 
-* Input the line below for 200 randomly generated tests:
+Our implementation contains two rewriters:
 
-cabal run sfi-kit -- fuzz --programs 200 --rewriter "$(cabal list-bin sfi-rewrite)"
+- `baseline` uses explicit address checks before memory accesses.
+- `mask` uses address masking and requires the strengthened masking runtime assumptions.
 
+Build the project first:
 
+```bash
+cabal build
+```
 
+## Baseline
 
-* Input the block below to run all the example cases:
+Run 200 randomly generated programs using the baseline rewriter:
 
+```bash
+cabal run sfi-kit -- fuzz --programs 200 --rewriter "$(cabal list-bin sfi-rewrite) baseline"
+```
+
+Run the baseline rewriter on all supplied example programs:
+
+```bash
 for f in examples/*.asm; do
     out="/tmp/rewritten.asm"
-    echo "===== Testing $f ====="
-    cabal run sfi-rewrite -- "$f" "$out" &&
-    cabal run sfi-kit -- test -n 10 "$f" "$out"
+    echo "===== Testing baseline: $f ====="
+    cabal run sfi-rewrite -- baseline "$f" "$out" &&
+    cabal run sfi-kit -- test "$f" "$out"
 done
+```
 
+## Address masking
+
+The address-masking extension requires the strengthened initial-state
+assumptions described in the project specification. The `--masking` option
+makes the test kit generate initial states satisfying these assumptions.
+
+Run 200 randomly generated programs using address masking:
+
+```bash
+cabal run sfi-kit -- fuzz --masking --programs 200 --rewriter "$(cabal list-bin sfi-rewrite) mask"
+```
+
+Run the address-masking rewriter on all supplied example programs:
+
+```bash
+for f in examples/*.asm; do
+    out="/tmp/rewritten.asm"
+    echo "===== Testing masking: $f ====="
+    cabal run sfi-rewrite -- mask "$f" "$out" &&
+    cabal run sfi-kit -- test --masking "$f" "$out"
+done
+```
+
+## Testing a single program
+
+A single program can also be rewritten explicitly.
+
+Baseline:
+
+```bash
+cabal run sfi-rewrite -- baseline examples/wild_pointer.asm out.asm
+cabal run sfi-kit -- test examples/wild_pointer.asm out.asm
+```
+
+Address masking:
+
+```bash
+cabal run sfi-rewrite -- mask examples/wild_pointer.asm out.asm
+cabal run sfi-kit -- test --masking examples/wild_pointer.asm out.asm
+```
 
 
 # Original supplied Readme

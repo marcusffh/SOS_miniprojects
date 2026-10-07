@@ -47,6 +47,7 @@ usage = unlines
   , "          --fuel F (step budget of the original, default 100000)"
   , "          --overhead K (the rewritten program gets K times the budget, default 50)"
   , "          --programs N (fuzz: number of programs, default 200)"
+  , "          --masking (use the strengthened initial-state contract required by address masking)"
   ]
 
 data Opts = Opts
@@ -60,11 +61,12 @@ data Opts = Opts
   , oTrace :: Bool
   , oInit :: Maybe FilePath
   , oOutput :: Bool
+  , oMasking :: Bool
   , oFiles :: [String]
   }
 
 defaults :: Opts
-defaults = Opts Nothing 1 100000 50 Nothing 200 Nothing False Nothing False []
+defaults = Opts Nothing 1 100000 50 Nothing 200 Nothing False Nothing False False []
 
 parseOpts :: [String] -> Either String Opts
 parseOpts = go defaults
@@ -82,6 +84,7 @@ parseOpts = go defaults
         "--trace" : rest -> go (o { oTrace = True }) rest
         "--init" : v : rest -> go (o { oInit = Just v }) rest
         "--output" : rest -> go (o { oOutput = True }) rest
+        "--masking" : rest -> go (o { oMasking = True }) rest
         flag : _ | "-" `isPrefixOf` flag -> Left ("unknown option " ++ flag)
         file : rest -> go (o { oFiles = file : oFiles o }) rest
     num :: (Read a) => String -> Either String a
@@ -171,6 +174,11 @@ randomMaskingStates :: Word64 -> Int -> Program -> [InitState]
 randomMaskingStates seed count p =
   runG seed (mapM (const (genMaskingInit p)) [1 .. count])
 
+randomTestStates :: Opts -> Word64 -> Int -> Program -> [InitState]
+randomTestStates o seed count p
+  | oMasking o = randomMaskingStates seed count p
+  | otherwise  = randomStates seed count p
+
 doRun :: Opts -> FilePath -> IO ()
 doRun o f = do
   p <- load f
@@ -247,7 +255,7 @@ doTest o f f' = do
     then return False
     else do
       given <- givenStates o
-      let sts = given ++ randomMaskingStates (oSeed o) (maybe 1000 id (oN o)) p
+      let sts = given ++ randomTestStates o (oSeed o) (maybe 1000 id (oN o)) p
           s = testRewriting (oFuel o) (oOverhead o) p p' sts
       printSummary o p p' s
       return (sFailed s == 0)
@@ -300,9 +308,12 @@ doFuzz o =
             fin = dir </> ("prog" ++ (show k ++ ".asm"))
             fout = dir </> ("prog" ++ (show k ++ ".sfi.asm"))
         writeFile fin (showProgram p)
-        let (prog, cmdArgs) = case words cmd of
-                                w : ws -> (w, ws)
-                                [] -> ("true", [])
+        let (prog, cmdArgs) =
+              case reverse (words cmd) of
+                mode : revPathParts ->
+                  (unwords (reverse revPathParts), [mode])
+                [] ->
+                  ("true", [])
         (code, _, err) <- readProcessWithExitCode prog (cmdArgs ++ [fin, fout]) ""
         case code of
           ExitFailure _ -> do
@@ -320,7 +331,7 @@ doFuzz o =
                     printf "program %d (%s): the output is not well-formed: requirement (0) fails: %s\n" k fin e
                     return False
                   Right () -> do
-                    let sts = given ++ randomMaskingStates ((oSeed o * 7919) + fromIntegral k) (maybe 200 id (oN o)) p
+                    let sts = given ++ randomTestStates o ((oSeed o * 7919) + fromIntegral k) (maybe 200 id (oN o)) p
                         s = testRewriting (oFuel o) (oOverhead o) p p' sts
                     if sFailed s == 0
                       then return True

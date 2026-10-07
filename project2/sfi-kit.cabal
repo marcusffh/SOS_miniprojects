@@ -47,6 +47,8 @@ executable sfi-kit
 executable sfi-rewrite
     import:           warnings
     main-is:          Rewrite.hs
+    other-modules:    RewriteBaseline
+                      RewriteMask
     build-depends:    base,
                       ebpf-tools,
                       sfi-kit
