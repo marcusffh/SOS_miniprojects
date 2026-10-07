@@ -247,7 +247,7 @@ doTest o f f' = do
     then return False
     else do
       given <- givenStates o
-      let sts = given ++ randomStates (oSeed o) (maybe 1000 id (oN o)) p
+      let sts = given ++ randomMaskingStates (oSeed o) (maybe 1000 id (oN o)) p
           s = testRewriting (oFuel o) (oOverhead o) p p' sts
       printSummary o p p' s
       return (sFailed s == 0)

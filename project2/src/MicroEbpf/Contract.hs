@@ -294,7 +294,7 @@ genMaskingInit prog = do
 
   size <- oneOf [512, 1024, 2048, 4096, 8192, 16384]
 
-  let maxBlock = (2 ^ (32 :: Int)) `div` size - 1
+  let maxBlock = (2 ^ (32 :: Int)) `div` size - 2
   block <- range 0 maxBlock
   let db = block * size
 
