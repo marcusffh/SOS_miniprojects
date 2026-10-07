@@ -1,3 +1,22 @@
+# How to test out implementation
+To evaluate the code, run the line or block in the terminal, as described below
+
+
+Input the line below for 200 randomly generated tests:
+
+cabal run sfi-kit -- fuzz --programs 200 --rewriter "$(cabal list-bin sfi-rewrite)"
+
+
+Input the block below to run all the example cases:
+
+for f in examples/*.asm; do
+    echo "===== Checking $f ====="
+    cabal run sfi-kit -- check "$f"
+done
+
+
+
+
 sfi-kit: baseline micro-eBPF for mini-project 2 (SOS 2026–27)
 ===============================================================
 
