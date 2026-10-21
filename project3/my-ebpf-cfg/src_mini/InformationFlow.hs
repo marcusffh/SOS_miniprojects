@@ -11,6 +11,32 @@ import Environment
 import Interval
 import Expressions
 
+branchCondition :: CFG -> Label -> Maybe (Jcmp, Reg, RegImm)
+branchCondition graph branch =
+    case
+        [ (cmp, reg, operand)
+        | (source, Assert cmp reg operand, _) <- Set.toList graph
+        , source == branch
+        ]
+    of
+        condition:_ -> Just condition
+        []          -> Nothing
+
+controlContext
+    :: CFG
+    -> Label
+    -> Map.Map Label SecurityState
+    -> Map.Map Label (Set.Set Label)
+    -> SecurityLevel
+controlContext graph target securityStates controlDeps =
+    joinLevels
+        [ branchLevel cmp reg operand state
+        | (branch, controlledNodes) <- Map.toList controlDeps
+        , Set.member target controlledNodes
+        , Just state <- [Map.lookup branch securityStates]
+        , Just (cmp, reg, operand) <- [branchCondition graph branch]
+        ]
+
 initialSecurityStates :: SecurityState -> Map.Map Label SecurityState
 initialSecurityStates initialState =
     Map.singleton 0 initialState
@@ -28,36 +54,61 @@ operandLevel state operand =
         R reg -> registerLevelOrHigh reg state
         Imm _ -> Low
 
+branchLevel :: Jcmp -> Reg -> RegImm -> SecurityState -> SecurityLevel
+branchLevel _ reg operand state =
+    joinLevel
+        (registerLevelOrHigh reg state)
+        (operandLevel state operand)
 
 -- Handle constant assignments
-transferSecurity :: Trans -> State -> SecurityState -> SecurityState
-transferSecurity Unconditional _ securityState = securityState
+transferSecurity 
+    :: SecurityLevel -> Trans -> State -> SecurityState -> SecurityState
+transferSecurity _ Unconditional _ securityState = 
+    securityState
 
-transferSecurity (Assert _ _ _) _ securityState = securityState
+transferSecurity _ (Assert _ _ _) _ securityState = 
+    securityState
 
 
-transferSecurity (NonCF instr) valueState securityState =
+transferSecurity context (NonCF instr) valueState securityState =
     case instr of
-
+    
+        LoadImm reg _ ->
+            setRegisterLevel reg
+                (joinLevel context Low)
+                securityState
+        
+        Binary _ Mov reg operand ->
+            setRegisterLevel reg 
+                (joinLevel context (operandLevel securityState operand))
+                securityState
+        
+        
         Binary _ Add reg operand ->
             let level =
-                    joinLevel
-                        (registerLevelOrHigh reg securityState)
-                        (operandLevel securityState operand)
+                    joinLevels
+                        [ context
+                        , registerLevelOrHigh reg securityState
+                        , operandLevel securityState operand
+                        ]
             in setRegisterLevel reg level securityState
-
+        
         Binary _ Sub reg operand ->
             let level =
-                    joinLevel
-                        (registerLevelOrHigh reg securityState)
-                        (operandLevel securityState operand)
+                    joinLevels
+                        [ context
+                        , registerLevelOrHigh reg securityState
+                        , operandLevel securityState operand
+                        ]
             in setRegisterLevel reg level securityState
 
         Binary _ Mul reg operand ->
             let level =
-                    joinLevel
-                        (registerLevelOrHigh reg securityState)
-                        (operandLevel securityState operand)
+                    joinLevels
+                        [ context
+                        , registerLevelOrHigh reg securityState
+                        , operandLevel securityState operand
+                        ]
             in setRegisterLevel reg level securityState
         
 
@@ -71,7 +122,8 @@ transferSecurity (NonCF instr) valueState securityState =
                         Nothing -> Interval (Finite 0) (Finite 0)
                         Just off -> evalConstant (fromIntegral off)
                 address = addInterval baseValue offsetValue
-                level = operandLevel securityState operand
+                level = 
+                    joinLevel context (operandLevel securityState operand)
             in case address of
                 Interval (Finite low) (Finite high)
                     | low == high ->
@@ -94,8 +146,12 @@ transferSecurity (NonCF instr) valueState securityState =
                                 case getMemoryLevel (fromIntegral low) securityState of
                                     Just l  -> l
                                     Nothing -> High
-                        in setRegisterLevel destination level securityState
-                _ -> setRegisterLevel destination High securityState
+                        in setRegisterLevel destination 
+                            (joinLevel context level)
+                            securityState
+                _ -> setRegisterLevel destination
+                        (joinLevel context High)
+                        securityState
         _ -> securityState
 
 analyzeSecurityOnce
@@ -113,21 +169,36 @@ analyzeSecurityOnce graph valueStates securityStates =
                 | (source, _, destination) <- Set.toList graph
                 , node <- [source, destination]
                 ]
+    exits =
+        Set.difference
+            (Set.fromList nodes)
+            (Set.fromList
+                [ source
+                | (source, _, _) <- Set.toList graph
+                ])
 
+    postDom = postDominators graph exits
+
+    controlDeps = controlDependencies graph postDom
+    
     updateNode currentStates node 
         | node == 0 =
             currentStates
         | otherwise =
-            let incoming = 
-                    incomingSecurityState graph valueStates currentStates node
-            in case Map.lookup node currentStates of 
+            case incomingSecurityState
+                         graph valueStates currentStates controlDeps node of 
                 Nothing -> 
-                    Map.insert node incoming currentStates
-                
-                Just oldState ->
-                    Map.insert node
-                        (joinSecurityState oldState incoming)
-                        currentStates
+                    currentStates
+
+                Just incoming ->
+                    case Map.lookup node currentStates of 
+                        Nothing -> 
+                            Map.insert node incoming currentStates
+
+                        Just oldState ->
+                            Map.insert node
+                            (joinSecurityState oldState incoming)
+                            currentStates
 
 analyzeSecurity
     :: CFG
@@ -148,20 +219,25 @@ securityPredecessors graph target =
     , destination == target
     ]
 
-joinIncomingSecurityStates :: [SecurityState] -> SecurityState
-joinIncomingSecurityStates [] = emptySecurityState
+joinIncomingSecurityStates :: [SecurityState] ->  Maybe SecurityState
+joinIncomingSecurityStates [] = Nothing
 joinIncomingSecurityStates (state:states) =
-    foldl joinSecurityState state states
+    Just (foldl joinSecurityState state states)
 
 incomingSecurityState
     :: CFG
     -> Map.Map Label State
     -> Map.Map Label SecurityState
+    -> Map.Map Label (Set.Set Label)
     -> Label
-    -> SecurityState
-incomingSecurityState graph valueStates securityStates target =
-    joinIncomingSecurityStates
-        [ transferSecurity trans valueState securityState
+    -> Maybe SecurityState
+incomingSecurityState graph valueStates securityStates controlDeps target =
+        joinIncomingSecurityStates
+        [ transferSecurity
+            (controlContext graph source securityStates controlDeps)
+            trans
+            valueState
+            securityState
         | (source, trans) <- securityPredecessors graph target
         , Just valueState <- [Map.lookup source valueStates]
         , Just securityState <- [Map.lookup source securityStates]
