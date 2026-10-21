@@ -82,6 +82,10 @@ transfer (NonCF instr) state =
         LoadImm r imm ->
             Just (transferLoadImm state r (fromIntegral imm))
 
+        Binary _ Mov r operand ->
+            let value = evalRegImm (getEnv state) operand
+            in Just (updateReg state r value)
+            
         Binary _ Add r operand ->
             let oldValue = evalReg (getEnv state) r
                 rightValue = evalRegImm (getEnv state) operand
