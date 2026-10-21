@@ -140,8 +140,12 @@ transfer (NonCF instr) state =
         _ ->
             Just state
 
-analyzeOnce :: CFG -> Map.Map Label State -> Map.Map Label State
-analyzeOnce graph states =
+analyzeOnce
+    :: Label
+    -> CFG
+    -> Map.Map Label State
+    -> Map.Map Label State
+analyzeOnce entry graph states =
     foldl updateNode states (Set.toList nodes)
   where
     nodes =
@@ -151,27 +155,36 @@ analyzeOnce graph states =
             , node <- [source, destination]
             ]
 
-    updateNode currentStates node =
-        case incomingState graph currentStates node of 
-            Nothing -> 
-                currentStates
+    updateNode currentStates node
+        | node == entry =
+            currentStates
 
-            Just incoming ->
-                case Map.lookup node currentStates of 
-                    Nothing ->
-                        Map.insert node incoming currentStates
-                    
-                    Just oldState ->
-                        Map.insert node
-                            (joinState oldState incoming)
-                            currentStates
-                
-analyze :: CFG -> Map.Map Label State -> Map.Map Label State
-analyze graph states =
-    let newStates = analyzeOnce graph states
+        | otherwise =
+            case incomingState graph currentStates node of
+                Nothing ->
+                    currentStates
+
+                Just incoming ->
+                    case Map.lookup node currentStates of
+                        Nothing ->
+                            Map.insert node incoming currentStates
+
+                        Just oldState ->
+                            Map.insert node
+                                (joinState oldState incoming)
+                                currentStates
+
+
+analyze
+    :: Label
+    -> CFG
+    -> Map.Map Label State
+    -> Map.Map Label State
+analyze entry graph states =
+    let newStates = analyzeOnce entry graph states
     in if newStates == states
        then states
-       else analyze graph newStates
+       else analyze entry graph newStates
 
 checkAssert :: State -> Jcmp -> Reg -> RegImm -> Truth
 checkAssert state cmp r operand =
