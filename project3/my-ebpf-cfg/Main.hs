@@ -11,9 +11,15 @@ import Data.Text.Display
 import Ebpf.Asm
 import Ebpf.AsmParser
 import Ebpf.Display ()
-
+ 
 import CFG
 
+import qualified Data.Map as Map
+import Analysis
+import Environment
+import InformationFlow
+import SecurityState
+import Security
 
 ------------------- The following is just for visualisation ------------------------
 
@@ -50,11 +56,29 @@ main = do
           putStrLn "Some sort of error occurred while parsing:"
           print err
         Right prog -> do
+          print prog
           printf "The eBPF file %s has %d instructions\n" ebpfFile (length prog)
-          let edges = cfgToDot $ cfg prog
+
+          let graph = cfg prog
+              exists = exitNodes prog
+              postDom = postDominators graph exists
+              controlDeps = controlDependencies graph postDom
+              initialValueState = State Map.empty Map.empty
+              valueStates = analyze 0 graph (Map.singleton 0 initialValueState)
+              initialSecurityState =
+                setRegisterLevel (Reg 1) High emptySecurityState
+              securityStates = analyzeSecurity graph valueStates
+                (initialSecurityStates initialSecurityState)
+              edges = cfgToDot graph
+          
+          print controlDeps
+          print postDom
+          print valueStates
+          print securityStates
+          
           writeFile dotFile (dotPrelude ++
                              edges ++
                              markNodes prog ++ "}")
           printf "Visualised the CFG in %s\n" dotFile
     _ ->
-      putStrLn "Usage <EBPF_FILE>"
+      putStrLn "Usage: ebpf-cfg <EBPF_FILE> <DOT_FILE>"
