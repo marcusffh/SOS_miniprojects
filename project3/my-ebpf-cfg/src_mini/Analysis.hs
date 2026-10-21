@@ -12,14 +12,17 @@ initialStates :: Label -> State -> Map.Map Label State
 initialStates entry initialState =
     Map.singleton entry initialState
 
-incomingState :: CFG -> Map.Map Label State -> Label -> State
+incomingState :: CFG -> Map.Map Label State -> Label -> Maybe State
 incomingState graph states target =
-    joinStates
+    case
         [ newState
         | (source, trans) <- predecessors graph target
         , Just sourceState <- [Map.lookup source states]
         , Just newState <- [applyEdge sourceState (source, trans, target)]
         ]
+    of
+        [] -> Nothing
+        (s:ss) -> Just (foldl joinState s ss)
 
 applyEdge :: State -> (Label, Trans, Label) -> Maybe State
 applyEdge state (_, trans, _) =
@@ -149,13 +152,19 @@ analyzeOnce graph states =
             ]
 
     updateNode currentStates node =
-        case Map.lookup node currentStates of
-            Nothing ->
-                let incoming = incomingState graph currentStates node
-                in Map.insert node incoming currentStates
-
-            Just _ ->
+        case incomingState graph currentStates node of 
+            Nothing -> 
                 currentStates
+
+            Just incoming ->
+                case Map.lookup node currentStates of 
+                    Nothing ->
+                        Map.insert node incoming currentStates
+                    
+                    Just oldState ->
+                        Map.insert node
+                            (joinState oldState incoming)
+                            currentStates
                 
 analyze :: CFG -> Map.Map Label State -> Map.Map Label State
 analyze graph states =
