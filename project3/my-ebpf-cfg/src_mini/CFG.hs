@@ -120,19 +120,58 @@ updateNode graph exits current node _oldSet =
                 Set.insert node
                     (foldl Set.intersection firstSet rest)
 
+immediatePostDominator
+    :: Map.Map Label (Set Label)
+    -> Label
+    -> Maybe Label
+immediatePostDominator postDom node =
+    let strictPostDominators =
+            Set.delete node
+                (Map.findWithDefault Set.empty node postDom)
+
+        isImmediate candidate =
+            all
+                (\other ->
+                    other == candidate
+                    || not
+                        (Set.member candidate
+                            (Map.findWithDefault Set.empty other postDom)))
+                (Set.toList strictPostDominators)
+
+    in case filter isImmediate (Set.toList strictPostDominators) of
+        candidate:_ -> Just candidate
+        []          -> Nothing
+
+
+
+
 controlDependencies
     :: CFG
     -> Map.Map Label (Set Label)
     -> Map.Map Label (Set Label)
 controlDependencies graph postDom =
     Map.fromListWith Set.union
-        [ (branch, controlledNodes)
-        | (branch, Assert _ _ _, successor) <- Set.toList graph
-        , let successorPostDom =
-                  Map.findWithDefault Set.empty successor postDom
-        , let branchPostDom =
-                  Map.findWithDefault Set.empty branch postDom
-        , let controlledNodes =
-                  Set.difference successorPostDom branchPostDom
-        , not (Set.null controlledNodes)
+        [ (branch, controlledUntil successor stop)
+        | branch <- Set.toList (nodes graph)
+        , Just stop <- [immediatePostDominator postDom branch]
+        , (source, _, successor) <- Set.toList graph
+        , source == branch
+        , not
+            (Set.member successor
+                (Map.findWithDefault Set.empty branch postDom))
         ]
+  where
+    controlledUntil start stop =
+        visit Set.empty start
+      where
+        visit seen node
+            | node == stop = seen
+            | Set.member node seen = seen
+            | otherwise =
+                let seen' = Set.insert node seen
+                    successors =
+                        [ destination
+                        | (source, _, destination) <- Set.toList graph
+                        , source == node
+                        ]
+                in foldl visit seen' successors
