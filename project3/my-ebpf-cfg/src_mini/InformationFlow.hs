@@ -123,12 +123,21 @@ transferSecurity context (NonCF instr) valueState securityState =
                         Just off -> evalConstant (fromIntegral off)
                 address = addInterval baseValue offsetValue
                 level = 
-                    joinLevel context (operandLevel securityState operand)
+                    joinLevels
+                        [ context
+                        , registerLevelOrHigh base securityState
+                        , operandLevel securityState operand
+                        ]
             in case address of
                 Interval (Finite low) (Finite high)
                     | low == high ->
                         setMemoryLevel (fromIntegral low) level securityState
-                _ -> securityState
+                _ -> 
+                    securityState
+                        { memoryLevels =
+                            Map.map (const High) (memoryLevels securityState)
+                        , unknownMemoryLevel = High
+                        }
         
         Load _ destination base offset ->
             let baseValue =
@@ -143,15 +152,17 @@ transferSecurity context (NonCF instr) valueState securityState =
                 Interval (Finite low) (Finite high)
                     | low == high ->
                         let level =
-                                case getMemoryLevel (fromIntegral low) securityState of
-                                    Just l  -> l
+                                case getMemoryLevel (fromIntegral low) securityState of 
+                                    Just l ->
+                                        joinLevels
+                                            [ context
+                                            , registerLevelOrHigh base securityState
+                                            , l 
+                                            , unknownMemoryLevel securityState
+                                            ]
                                     Nothing -> High
-                        in setRegisterLevel destination 
-                            (joinLevel context level)
-                            securityState
-                _ -> setRegisterLevel destination
-                        (joinLevel context High)
-                        securityState
+                        in setRegisterLevel destination level securityState
+                _ -> setRegisterLevel destination High securityState
         _ -> securityState
 
 analyzeSecurityOnce
@@ -232,7 +243,7 @@ incomingSecurityState
     -> Label
     -> Maybe SecurityState
 incomingSecurityState graph valueStates securityStates controlDeps target =
-        joinIncomingSecurityStates
+    joinIncomingSecurityStates
         [ transferSecurity
             (controlContext graph source securityStates controlDeps)
             trans
@@ -242,3 +253,5 @@ incomingSecurityState graph valueStates securityStates controlDeps target =
         , Just valueState <- [Map.lookup source valueStates]
         , Just securityState <- [Map.lookup source securityStates]
         ]
+
+       
