@@ -27,6 +27,9 @@ executable ebpf-cfg
         Expressions
         Analysis
         CFG
+        Security
+        SecurityState
+        InformationFlow
 
     -- Other library packages from which modules are imported.
     build-depends:    base >= 4.14 && < 5,
@@ -38,4 +41,24 @@ executable ebpf-cfg
     hs-source-dirs:   app, src_min
 
     -- Base language which the package is written in.
+    default-language: Haskell2010
+
+
+test-suite information-flow-tests
+    type:             exitcode-stdio-1.0
+    main-is:          InformationFlowTests.hs
+    other-modules:
+        Interval
+        Environment
+        Expressions
+        Analysis
+        CFG
+        Security
+        SecurityState
+        InformationFlow
+    hs-source-dirs:   test, src_min
+    build-depends:    base >= 4.14 && < 5,
+                      containers,
+                      ebpf-tools == 0.2.0.0,
+                      text-display
     default-language: Haskell2010
