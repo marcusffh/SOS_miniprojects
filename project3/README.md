@@ -46,3 +46,5 @@ We fixed it by accounting for control dependencies
 2. Identify which instructions are controlled by that branch
 3. Treat assignments inside that regions as influenced by the branch condition
 4. Stop that influence when exevutuion reaches the branch's reconvergence point
+
+Passing tests provides evidence that the implementation handles those cases; it is not a formal proof that every possible program is handled correctly
