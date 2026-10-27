@@ -1,6 +1,6 @@
 # SOS_miniprojects
 
-Information-flow analysis: determine whether sensitive information can influence values that should remain public. 
+## Information-flow analysis: determine whether sensitive information can influence values that should remain public. 
 
 How can information leak?
 We need to know not just what value a register contains but also where its value came from
@@ -10,7 +10,7 @@ High - sensitive or secret information
 
 We want to track whether sensitive information can influence other values as the program executes
 
-Problem A: direct information flow
+## Problem A: direct information flow
 Suppose we have
 r1 = secret (High)
 r0 = r1 (copy)
@@ -19,7 +19,7 @@ If we only track values, we know that r0 receives the value of r1, but we also n
 
 We introduces security states that track labels for registers and memory. Instructions such as Mov propagate the source's security level to the destination. Arirthmetic instructions combine the security levels of their operand so if either operand of an addition is High the result is High
 
-Problem B: information flow through memory 
+## Problem B: information flow through memory 
 If we have:
 Store r1 at memory adress 10
 Load memory address 10 into r0
@@ -30,7 +30,7 @@ We extended the security state to track both registers and memory.
 That means a store transfers the relevant security level to the memory cell, and a later load transfers the memory cell's level to the destination register.
 We also handled uncertain addresses and uninitialized memory conservatively. If the analysis cannot establish that a memory read is safe to treat as Low, defaults to High rather than incorrectly declaring the value public.
 
-Problem C: indirect information flow through branches
+## Problem C: indirect information flow through branches
 consider:
 if (secret == 0) {
     r0 = 0
